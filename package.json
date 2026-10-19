@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon -r esm index.js",
+    "start": "nodemon --import tsx index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -23,5 +23,8 @@
     "mongoose": "^9.10.3",
     "morgan": "^1.12.1",
     "nanoid": "^6.0.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
   }
 }

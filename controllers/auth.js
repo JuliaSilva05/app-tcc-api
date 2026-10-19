@@ -8,7 +8,6 @@ require("dotenv").config();
 // sgMail.setApiKey(process.env.SENDGRID_KEY);
 
 export const register = async (req, res) => {
-  console.log("Signup Hit");
   try {
     const { name, email, password, role } = req.body;
 
@@ -16,15 +15,19 @@ export const register = async (req, res) => {
 
     if (!name || !email || !password) {
       return res.json({
-        error: "All fields are required",
+        error: "Todos os campos devem ser preenchidos",
       });
+    };
+
+    if (password.length < 8) {
+      return res.json({error: "A senha deve ter no mínimo 8 caracteres"})
     }
 
     const exist = await User.findOne({ email });
     
     if (exist) {
       return res.json({
-        error: "Email is already taken",
+        error: "E-mail já está em uso",
       });
     };
     
@@ -45,30 +48,11 @@ export const register = async (req, res) => {
     const { ...rest } = newUser._doc;
     
     console.log(newUser, rest, token);
-    
-    // try {
-    //   const user = await new User({
-    //     name,
-    //     email,
-    //     password: hashedPassword,
-    //   }).save();
-      
-    //   // create signed token
-    //   const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-    //     expiresIn: "7d",
-    //   });
-      
-    //   //   console.log(user);
-    //   const { password, ...rest } = user._doc;
 
-    //   return res.json({
-    //     token,
-    //     user: rest,
-    //   });
-    // } catch (err) {
-    //   console.log(err);
-    // }
-    return(res.json({ ok: true }));
+    return res.json({
+      token,
+      user: rest,
+    });
   } catch (err) {
     console.log(err);
   }
@@ -83,7 +67,7 @@ export const login = async (req, res) => {
     
     if (!user) {
       return res.json({
-        error: "No user found",
+        error: "Usuário não encotrado",
       });
     }
     
@@ -91,7 +75,7 @@ export const login = async (req, res) => {
     const match = await comparePassword(password, user.password);
     if (!match) {
       return res.json({
-        error: "Wrong password",
+        error: "Senha errada",
       });
     }
     
