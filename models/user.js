@@ -26,6 +26,9 @@ const userSchema = new Schema(
       enum:  ["therapist", "patient"],
       required: true,
     },
+    imageUrl: {
+
+    },
   },
   { timestamps: true },
 );

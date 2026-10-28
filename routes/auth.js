@@ -6,8 +6,6 @@ const { register, login,
     // forgotPassword, resetPassword 
 } = require("../controllers/auth");
 
-// const { getPatients } = require("../controllers/therapist")
-
 router.get("/", (req, res) => {
     return res.json({ data: "Hello world from the API", });
 });
@@ -17,6 +15,11 @@ router.post("/login", login);
 // router.post("/forgot-password", forgotPassword);
 // router.post("/reset-password", resetPassword);
 
-// router.post("/get-patients", getPatients);
+
+const { getPatients, searchNewPatient, invitePatient } = require("../controllers/therapist");
+
+router.post("/get-patients", getPatients);
+router.post("/search-new-patient", searchNewPatient); 
+router.post("/invite-patient", invitePatient); 
 
 export default router;

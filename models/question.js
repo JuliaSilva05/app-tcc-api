@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 
 const questionSchema = new Schema(
   {
-    therapistId: {
+    therapist: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,

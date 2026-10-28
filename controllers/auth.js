@@ -4,14 +4,12 @@ import jwt from "jsonwebtoken";
 import nanoid from "nanoid";
 
 require("dotenv").config();
-// const sgMail = require("@sendgrid/mail");
-// sgMail.setApiKey(process.env.SENDGRID_KEY);
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_KEY);
 
 export const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-
-    console.log(name, email, password)
 
     if (!name || !email || !password) {
       return res.json({
@@ -23,7 +21,9 @@ export const register = async (req, res) => {
       return res.json({error: "A senha deve ter no mínimo 8 caracteres"})
     }
 
-    const exist = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase();
+
+    const exist = await User.findOne({ email: normalizedEmail, role: role });
     
     if (exist) {
       return res.json({
@@ -35,7 +35,7 @@ export const register = async (req, res) => {
 
     const newUser = await new User({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       role,
     }).save();
@@ -60,11 +60,12 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
+    const normalizedEmail = email.toLowerCase();
     
     // check if our db has user with that email
-    const user = await User.findOne({ email });
-    
+    const user = await User.findOne({ email: normalizedEmail, role: role });
+    console.log(user)
     if (!user) {
       return res.json({
         error: "Usuário não encotrado",
@@ -141,9 +142,9 @@ export const login = async (req, res) => {
 //       return res.json({ error: "Email or reset code is invalid" });
 //     }
 //     // if password is short
-//     if (!password || password.length < 6) {
+//     if (!password || password.length < 8) {
 //       return res.json({
-//         error: "Password is required and should be 6 characters long",
+//         error: "Password is required and should be 8 characters long",
 //       });
 //     }
 //     // hash password

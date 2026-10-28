@@ -4,22 +4,22 @@ const { Schema } = mongoose;
 
 const careLinkSchema = new Schema(
   {
-    therapistId: {
+    therapist: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    patientId: {
+    patient: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
     therapistDisplayName: {
-      type: string,
+      type: String,
       trim: true,
     },
     patientDisplayName: {
-      type: string,
+      type: String,
       trim: true,
     },
     status: {
