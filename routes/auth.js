@@ -6,8 +6,6 @@ const { register, login,
     // forgotPassword, resetPassword 
 } = require("../controllers/auth");
 
-// const { getPatients } = require("../controllers/therapist")
-
 router.get("/", (req, res) => {
     return res.json({ data: "Hello world from the API", });
 });
@@ -17,6 +15,20 @@ router.post("/login", login);
 // router.post("/forgot-password", forgotPassword);
 // router.post("/reset-password", resetPassword);
 
-// router.post("/get-patients", getPatients);
+
+const { getPatients, searchNewPatient, invitePatient, getPatientInfo, editPatientDisplayName } = require("../controllers/therapist");
+
+router.post("/get-patients", getPatients);
+router.post("/search-new-patient", searchNewPatient); 
+router.post("/invite-patient", invitePatient);
+router.get("/get-patient-info/:linkId", getPatientInfo);
+router.patch("/edit-patient-display-name", editPatientDisplayName);
+
+
+const { getPendingTherapistsNumber, getTherapists, editCareLink } = require("../controllers/patient");
+
+router.get("/get-pending-therapists/:patientId", getPendingTherapistsNumber);
+router.get("/get-therapists/:patientId", getTherapists);
+router.patch("/edit-care-link", editCareLink);
 
 export default router;

@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 
 const activitySchema = new Schema(
   {
-    therapistId: {
+    therapist: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
