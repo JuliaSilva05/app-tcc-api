@@ -1,6 +1,7 @@
 const { ObjectId, ObjectID } = require("mongodb");
 import CareLink from "../models/care-link";
 import User from "../models/user";
+import Folder from "../models/folder";
 
 export const getPatients = async (req, res) => {
   try {
@@ -139,7 +140,6 @@ export const getPatientInfo = async (req, res) => {
 export const editPatientDisplayName = async (req, res) => {
   try {
     const { newDisplayName, linkId } = req.body;
-    console.log(newDisplayName, linkId)
 
     await CareLink.updateOne(
       { _id: new ObjectId(linkId) },
@@ -151,5 +151,51 @@ export const editPatientDisplayName = async (req, res) => {
     });
   } catch (e) {
     console.error(e);
+  }
+}
+
+export const createCategory = async (req, res) => {
+  try {
+    const { therapist, name, kind, itemModel } = req.body;
+
+    await new Folder({
+      therapist,
+      name,
+      kind,
+      itemModel,
+    }).save();
+
+    return res.json({
+      ok: true,
+    });
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export const getCategories = async (req, res) => {
+  try {
+    const { therapist, kind, itemModel, search } = req.body;
+
+    const folders = await Folder.find(
+      {
+        therapist, kind, itemModel,
+      },
+      {
+        name: 1,
+        // items: 1,
+        itemsCount: {
+          $size: "$items",
+        },
+      }
+    )
+
+    console.log("folders", folders)
+
+    return res.json({
+      folders: folders,
+    })
+  } catch (e) {
+    console.log(e);
   }
 }

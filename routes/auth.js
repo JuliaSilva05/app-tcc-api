@@ -16,13 +16,18 @@ router.post("/login", login);
 // router.post("/reset-password", resetPassword);
 
 
-const { getPatients, searchNewPatient, invitePatient, getPatientInfo, editPatientDisplayName } = require("../controllers/therapist");
+const { 
+    getPatients, searchNewPatient, invitePatient, getPatientInfo, editPatientDisplayName, createCategory, 
+    getCategories,
+} = require("../controllers/therapist");
 
 router.post("/get-patients", getPatients);
 router.post("/search-new-patient", searchNewPatient); 
 router.post("/invite-patient", invitePatient);
 router.get("/get-patient-info/:linkId", getPatientInfo);
 router.patch("/edit-patient-display-name", editPatientDisplayName);
+router.post("/create-category", createCategory);
+router.post("/get-categories", getCategories);
 
 
 const { getPendingTherapistsNumber, getTherapists, editCareLink } = require("../controllers/patient");
