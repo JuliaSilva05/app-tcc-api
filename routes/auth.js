@@ -16,10 +16,19 @@ router.post("/login", login);
 // router.post("/reset-password", resetPassword);
 
 
-const { getPatients, searchNewPatient, invitePatient } = require("../controllers/therapist");
+const { getPatients, searchNewPatient, invitePatient, getPatientInfo, editPatientDisplayName } = require("../controllers/therapist");
 
 router.post("/get-patients", getPatients);
 router.post("/search-new-patient", searchNewPatient); 
-router.post("/invite-patient", invitePatient); 
+router.post("/invite-patient", invitePatient);
+router.get("/get-patient-info/:linkId", getPatientInfo);
+router.patch("/edit-patient-display-name", editPatientDisplayName);
+
+
+const { getPendingTherapistsNumber, getTherapists, editCareLink } = require("../controllers/patient");
+
+router.get("/get-pending-therapists/:patientId", getPendingTherapistsNumber);
+router.get("/get-therapists/:patientId", getTherapists);
+router.patch("/edit-care-link", editCareLink);
 
 export default router;

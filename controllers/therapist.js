@@ -4,17 +4,18 @@ import User from "../models/user";
 
 export const getPatients = async (req, res) => {
   try {
-    const { user_id, search, status } = req.body;
+    const { user_id, search } = req.body;
 
-    console.log(user_id, status)
     const links = await CareLink.find(
       {
         therapist: new ObjectId(user_id),
-        status: status,
       },
-      // {
-      //   _id: 1, patientDisplayName: 1,
-      // }
+      {
+        therapist: 0, therapistDisplayName: 0,
+      },
+      {
+        sort: { status: 1 }
+      }
     );
 
     console.log("links", links)
@@ -81,7 +82,7 @@ export const invitePatient = async (req, res) => {
       return res.json({ ok: false });
     }
 
-    const newCareLink = await new CareLink({
+    await new CareLink({
       patient: patientId,
       therapist: therapistId,
       patientDisplayName: patient.name,
@@ -90,6 +91,64 @@ export const invitePatient = async (req, res) => {
     }).save();
 
     return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export const getPatientInfo = async (req, res) => {
+  try {
+    console.log(req)
+    const { linkId } = req.params;
+
+    console.log(linkId);
+
+    const info = await CareLink.aggregate([
+      { $match: { _id: new ObjectId(linkId) } },
+      { $lookup: {
+          from: "users",
+          localField: "patient",
+          foreignField: "_id",
+          as: "patientInfo"
+        }
+      },
+      {
+        $unwind: {
+          path: "$patientInfo",
+          preserveNullAndEmptyArrays: true,
+        }
+      },
+      { $project: {
+          name: "$patientInfo.name",
+          email: "$patientInfo.email",
+          patientDisplayName: 1,
+        }
+      }
+    ]);
+
+    console.log('info', info, info[0])
+
+    return res.json({
+      info: info[0],
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export const editPatientDisplayName = async (req, res) => {
+  try {
+    const { newDisplayName, linkId } = req.body;
+    console.log(newDisplayName, linkId)
+
+    await CareLink.updateOne(
+      { _id: new ObjectId(linkId) },
+      { patientDisplayName: newDisplayName },
+    );
+
+    return res.json({
+      ok: true,
+    });
   } catch (e) {
     console.error(e);
   }
