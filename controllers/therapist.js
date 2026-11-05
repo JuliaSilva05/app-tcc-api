@@ -183,7 +183,6 @@ export const getCategories = async (req, res) => {
       },
       {
         name: 1,
-        // items: 1,
         itemsCount: {
           $size: "$items",
         },
@@ -199,3 +198,21 @@ export const getCategories = async (req, res) => {
     console.log(e);
   }
 }
+
+export const createQuestion = async(req, res) => {
+  try {
+    const { title, titleAudio, description, image, tips } = req.body;
+
+    console.log(title)
+    console.log(titleAudio)
+    console.log(description)
+    console.log(image)
+    console.log(tips)
+
+    res.json({
+      ok: true,
+    });
+  } catch(e) {
+    console.log(e);
+  }
+};
