@@ -1,5 +1,6 @@
 // WIP
 import mongoose from "mongoose";
+import { audioSchema } from "./audio";
 
 const { Schema } = mongoose;
 
@@ -21,12 +22,17 @@ const questionSchema = new Schema(
       trim: true,
       required: true,
     },
-    imageUrl: {
-
-    },
-    tips: [{
-      type: String,
-    }]
+    descriptionAudio: { type: audioSchema, default: null },
+    imageKey: { type: String, default: null },
+    tips: [
+      new Schema(
+        {
+          text: { type: String, required: true },
+          audio: { type: audioSchema, default: null },
+        },
+        { _id: true } // lets you edit/reorder/replace one tip's audio by id
+      ),
+    ],
   },
   { timestamps: true },
 )

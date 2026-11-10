@@ -1,13 +1,13 @@
 // WIP
 import mongoose from "mongoose";
+import { audioSchema } from "./audio";
 
 const { Schema } = mongoose;
 
 const recordingSchema = new Schema(
   {
     question: { type: Schema.Types.ObjectId, ref: 'Question', required: true },
-    audioUrl: { type: String, required: true }, // file in object storage
-    durationSec: { type: Number },
+    audio: { type: audioSchema, required: true },
     recordedAt: { type: Date, default: Date.now },
   },
   { _id: false }
