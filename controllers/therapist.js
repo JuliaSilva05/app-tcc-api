@@ -3,6 +3,8 @@ import CareLink from "../models/care-link";
 import User from "../models/user";
 import Folder from "../models/folder";
 import Question from "../models/question";
+import Activity from "../models/activity";
+import Assignment from "../models/assignment";
 import { s3 } from "../config/r2";
 import {
 	PutObjectCommand,
@@ -308,20 +310,108 @@ export const createQuestion = async(req, res) => {
   }
 };
 
+const getGetSignedUrl = async (key) => {
+  const getUrl = await getSignedUrl(
+    s3,
+    new GetObjectCommand({ 
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: key
+    }),
+    { expiresIn: 3600 },
+  );
+
+  return getUrl;
+}
+
 export const getQuestions = async (req, res) => {
   try {
-    const { therapist } = req.body;
+    const { therapistId } = req.params;
+
+    console.log(therapistId)
 
     const questions = await Question.find(
       {
-        therapist,
+        therapist: new ObjectId(therapistId),
       },
-    )
-
+      {
+        title: 1, description: 1, tips: 1,
+        imageKey: 1,
+      }
+    ).lean();
+    
     console.log("questions", questions)
+    
+    const questionsWithImages = await Promise.all(
+      questions.map(async ({ imageKey, ...question }) => ({
+        ...question,
+        image: imageKey
+          ? {
+              url:  await getGetSignedUrl(imageKey),
+              contentType: `image/${imageKey.split(".").pop()}`
+            }
+          : null,
+      }))
+    );
+    
+    console.log("questionsWithImages", questionsWithImages)
 
     return res.json({
-      questions,
+      questions: questionsWithImages,
+    })
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export const createActivityAndAssignment = async (req, res) => {
+  try {
+    const { therapist, title, questions, patients } = req.body;
+
+    const newActivity = await new Activity({
+      therapist,
+      title,
+      questions: questions.map(v => new ObjectId(v)),
+    }).save();
+
+    console.log('newActivity',newActivity)
+
+    let newAssignments = [];
+    if (patients && patients.length) {
+      patients.forEach(async (v) => {
+        const newAssignment = await new Assignment({
+          activity: newActivity._id,
+          therapist,
+          patient: new ObjectId(v),
+        }).save();
+
+        newAssignments.push(newAssignment);
+      })
+
+    }
+
+    return res.json({
+      ok: true,
+    })
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export const getActivities = async (req, res) => {
+  try {
+    const { therapistId } = req.params;
+
+    const activities = await Activity.find(
+      {
+        therapist: new ObjectId(therapistId),
+      },
+      {
+        title: 1, questions: 1,
+      }
+    ).lean();
+
+    return res.json({
+      activities,
     })
   } catch (e) {
     console.log(e);
