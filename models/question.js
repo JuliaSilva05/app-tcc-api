@@ -17,16 +17,13 @@ const questionSchema = new Schema(
       trim: true,
       required: true,
     },
-    titleAudio: { type: audioSchema, default: null },
     description: {
       type: String,
       trim: true,
       required: true,
     },
-    imageUrl: { type: String, default: null },
-    // imageUrl: {
-
-    // },
+    descriptionAudio: { type: audioSchema, default: null },
+    imageKey: { type: String, default: null },
     tips: [
       new Schema(
         {
@@ -36,9 +33,6 @@ const questionSchema = new Schema(
         { _id: true } // lets you edit/reorder/replace one tip's audio by id
       ),
     ],
-    // tips: [{
-    //   type: String,
-    // }]
   },
   { timestamps: true },
 )

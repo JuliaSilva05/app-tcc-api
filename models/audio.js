@@ -1,3 +1,7 @@
+import mongoose from "mongoose";
+
+const { Schema } = mongoose;
+
 export const audioSchema = new Schema(
   {
     key: { type: String, required: true }, // path in the bucket, e.g. "audio/questions/abc123.m4a"
