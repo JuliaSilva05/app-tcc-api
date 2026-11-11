@@ -1,5 +1,9 @@
+import Assignment from "../models/assignment";
+import Activity from "../models/activity";
 import CareLink from "../models/care-link";
+import Question from "../models/question";
 const { ObjectId } = require("mongodb");
+import { getPutSignedUrl, getGetSignedUrl } from "../helpers/r2";
 
 export const getPendingTherapistsNumber = async (req, res) => {
   try {
@@ -77,6 +81,126 @@ export const editCareLink = async (req, res) => {
     return res.json({
       ok: true,
     });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export const getAssignments = async (req, res) => {
+  try {
+    const { patientId } = req.params;
+
+    console.log(patientId)
+    const assignmentsList = await Assignment.aggregate([
+      { $match: { patient: new ObjectId(patientId) } },
+    
+      {
+        $lookup: {
+          from: "activities",
+          localField: "activity",
+          foreignField: "_id",
+          as: "activityInfo"
+        },
+      },
+      {
+        $unwind: {
+          path: "$activityInfo",
+          preserveNullAndEmptyArrays: true,
+        }
+      },
+
+      {
+        $lookup: {
+          from: "carelinks",
+          localField: "patient",
+          foreignField: "patient",
+          as: "carelinksInfo"
+        },
+      },
+      {
+        $unwind: {
+          path: "$carelinksInfo",
+          preserveNullAndEmptyArrays: true,
+        }
+      },
+      {
+        $project: {
+          status: 1,
+          activity: 1,
+          questionsCount: { $size: "$activityInfo.questions" },
+          title: "$activityInfo.title",
+          therapistDisplayName: "$carelinksInfo.therapistDisplayName",
+          createdAt: 1,
+        }
+      }
+    ])
+
+    return res.json({
+      assignments: assignmentsList,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export const getActivityQuestionsData = async (req, res) => {
+  try {
+    console.log(req)
+    const { activityId, current } = req.params;
+    console.log(activityId, current)
+    const getQuestionData = await Activity.aggregate([
+      {
+        $match: { _id: new ObjectId(activityId) },
+      },
+      {
+        $project: {
+          questions: 1,
+          question: { "$arrayElemAt": [ "$questions", Number(current) ] },
+        },
+      },
+
+      {
+        $lookup: {
+          from: "questions",
+          localField: "question",
+          foreignField: "_id",
+          as: "questionInfo"
+        },
+      },
+      {
+        $unwind: {
+          path: "$questionInfo",
+          preserveNullAndEmptyArrays: true,
+        }
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$questionInfo"
+        },
+      },
+
+      // {
+      //   $project: {
+      //     title: 1
+      //   }
+      // }
+    ]);
+
+    const imageUrl = await getGetSignedUrl(getQuestionData[0].imageKey);
+
+    return res.json({
+      data: getQuestionData[0],
+      imageUrl: imageUrl,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export const doAssignment = async (req, res) => {
+  try {
+    const {  assignmentId, responseAudio } = req.body;
+
   } catch (e) {
     console.error(e);
   }

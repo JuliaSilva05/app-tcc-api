@@ -36,10 +36,17 @@ router.get("/get-activities/:therapistId", getActivities)
 
 
 
-const { getPendingTherapistsNumber, getTherapists, editCareLink } = require("../controllers/patient");
+const { 
+    getPendingTherapistsNumber, getTherapists, editCareLink, getAssignments, getActivityQuestionsData,
+    doAssignment,
+} = require("../controllers/patient");
 
 router.get("/get-pending-therapists/:patientId", getPendingTherapistsNumber);
 router.get("/get-therapists/:patientId", getTherapists);
 router.patch("/edit-care-link", editCareLink);
+router.get("/get-assignments/:patientId", getAssignments);
+router.get("/get-activity-questions-data/:activityId/:current", getActivityQuestionsData);
+router.patch("/do-assignment", doAssignment);
+
 
 export default router;

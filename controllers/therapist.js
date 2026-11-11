@@ -5,14 +5,8 @@ import Folder from "../models/folder";
 import Question from "../models/question";
 import Activity from "../models/activity";
 import Assignment from "../models/assignment";
-import { s3 } from "../config/r2";
-import {
-	PutObjectCommand,
-	GetObjectCommand,
-	ListObjectsV2Command,
-  S3,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { getPutSignedUrl, getGetSignedUrl } from "../helpers/r2";
+
 
 export const getPatients = async (req, res) => {
   try {
@@ -210,23 +204,6 @@ export const getCategories = async (req, res) => {
   }
 }
 
-const getPutSignedUrl = async (creatorId, type, format) => {
-  const key = `users/${creatorId}/${type}/${crypto.randomUUID()}.${format}`;
-  const contentType = `${type}/${format}`;
-
-  const putUrl = await getSignedUrl(
-    s3,
-    new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME,
-      Key: key,
-      ContentType: contentType,
-    }),
-    { expiresIn: 3600 },
-  );
-
-  return { key, putUrl, contentType };
-}
-
 export const createQuestion = async(req, res) => {
   try {
     const { therapist, title, descriptionAudio, description, image, tips } = req.body;
@@ -244,10 +221,6 @@ export const createQuestion = async(req, res) => {
     if (descriptionAudio) {
       descriptionAudioUpload = await getPutSignedUrl(therapist, "audio", descriptionAudio.mimeType);
     }
-
-    
-
-
 
     const formattedTips = [];
     const tipsUploads = [];
@@ -310,19 +283,6 @@ export const createQuestion = async(req, res) => {
   }
 };
 
-const getGetSignedUrl = async (key) => {
-  const getUrl = await getSignedUrl(
-    s3,
-    new GetObjectCommand({ 
-      Bucket: process.env.R2_BUCKET_NAME,
-      Key: key
-    }),
-    { expiresIn: 3600 },
-  );
-
-  return getUrl;
-}
-
 export const getQuestions = async (req, res) => {
   try {
     const { therapistId } = req.params;
@@ -367,6 +327,8 @@ export const createActivityAndAssignment = async (req, res) => {
   try {
     const { therapist, title, questions, patients } = req.body;
 
+    console.log(therapist, title, questions, patients)
+
     const newActivity = await new Activity({
       therapist,
       title,
@@ -388,6 +350,7 @@ export const createActivityAndAssignment = async (req, res) => {
       })
 
     }
+    console.log('newAssignments',newAssignments)
 
     return res.json({
       ok: true,

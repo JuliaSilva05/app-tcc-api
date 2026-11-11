@@ -15,7 +15,7 @@ const recordingSchema = new Schema(
 
 const assignmentSchema = new Schema(
   {
-    activity: { 
+    activity: {
         type: Schema.Types.ObjectId, 
         ref: 'Activity', 
         required: true 
