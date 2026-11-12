@@ -19,7 +19,8 @@ router.post("/login", login);
 
 const { 
     getPatients, searchNewPatient, invitePatient, getPatientInfo, editPatientDisplayName, createCategory, 
-    getCategories, createQuestion, getQuestions, createActivityAndAssignment, getActivities
+    getCategories, createQuestion, getQuestions, createActivityAndAssignment, getActivities, 
+    getQuestionPreview,
 } = require("../controllers/therapist");
 
 router.post("/get-patients", getPatients);
@@ -33,6 +34,7 @@ router.post("/create-question", createQuestion);
 router.get("/get-questions/:therapistId", getQuestions);
 router.post("/create-activity-and-assignments", createActivityAndAssignment);
 router.get("/get-activities/:therapistId", getActivities)
+router.get("/get-question-preview/:questionId", getQuestionPreview);
 
 
 

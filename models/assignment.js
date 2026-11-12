@@ -6,7 +6,11 @@ const { Schema } = mongoose;
 
 const recordingSchema = new Schema(
   {
-    question: { type: Schema.Types.ObjectId, ref: 'Question', required: true },
+    // question: { 
+    //   type: Schema.Types.ObjectId, 
+    //   ref: 'Question', 
+    //   // required: true 
+    // },
     audio: { type: audioSchema, required: true },
     recordedAt: { type: Date, default: Date.now },
   },

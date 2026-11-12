@@ -145,7 +145,6 @@ export const getAssignments = async (req, res) => {
 
 export const getActivityQuestionsData = async (req, res) => {
   try {
-    console.log(req)
     const { activityId, current } = req.params;
     console.log(activityId, current)
     const getQuestionData = await Activity.aggregate([
@@ -188,9 +187,16 @@ export const getActivityQuestionsData = async (req, res) => {
 
     const imageUrl = await getGetSignedUrl(getQuestionData[0].imageKey);
 
+    const tipsWithFlag = getQuestionData[0].tips.map((v) => ({...v, visible: false}));
+
+    console.log(tipsWithFlag)
+
     return res.json({
-      data: getQuestionData[0],
-      imageUrl: imageUrl,
+      data: {
+        ...getQuestionData[0],
+        tips: tipsWithFlag,
+        imageUrl,
+      },
     });
   } catch (e) {
     console.error(e);
@@ -199,7 +205,46 @@ export const getActivityQuestionsData = async (req, res) => {
 
 export const doAssignment = async (req, res) => {
   try {
-    const {  assignmentId, responseAudio } = req.body;
+    const {  assignmentId, patientId, audioResponse } = req.body;
+
+    console.log(audioResponse)
+
+    const newAudioExtension = audioResponse.url
+      .split("?")[0]
+      .split(".")
+      .pop()
+      .toLowerCase();
+    const newAudio = await getPutSignedUrl(patientId, "audio", newAudioExtension);
+
+    const newRecording = {
+      audio: {
+        key: newAudio.key,
+        mimeType: audioResponse.mimeType,
+        durationSec: audioResponse.durationSec,
+        sizeBytes: audioResponse.sizeBytes,
+      },
+      recordedAt: Date.now(),
+    };
+
+    console.log(newRecording)
+
+    const updatedDo = await Assignment.updateOne(
+      { _id: new ObjectId(assignmentId) },
+      {
+        $set: {
+          status: "submitted",
+          submittedAt: Date.now(),
+        },
+        $addToSet: {
+          recordings: newRecording,
+        },
+      }
+    );
+
+    return res.json({
+      ok: true,
+      audioUpload: newAudio,
+    })
 
   } catch (e) {
     console.error(e);

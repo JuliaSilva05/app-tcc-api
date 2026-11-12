@@ -104,7 +104,6 @@ export const invitePatient = async (req, res) => {
 
 export const getPatientInfo = async (req, res) => {
   try {
-    console.log(req)
     const { linkId } = req.params;
 
     console.log(linkId);
@@ -125,6 +124,8 @@ export const getPatientInfo = async (req, res) => {
         }
       },
       { $project: {
+          patientId: "$patient",
+          therapistId: "$therapist",
           name: "$patientInfo.name",
           email: "$patientInfo.email",
           patientDisplayName: 1,
@@ -132,10 +133,40 @@ export const getPatientInfo = async (req, res) => {
       }
     ]);
 
+    const history = await Assignment.aggregate([
+      { 
+        $match: { 
+          patient: new ObjectId(info[0].patientId),
+          therapist: new ObjectId(info[0].therapistId),
+        } 
+      },
+      { $lookup: {
+          from: "activities",
+          localField: "activity",
+          foreignField: "_id",
+          as: "activityInfo"
+        }
+      },
+      {
+        $unwind: {
+          path: "$activityInfo",
+          preserveNullAndEmptyArrays: true,
+        }
+      },
+      { $project: {
+          title: "$activityInfo.title",
+          status: 1,
+          recordings: 1,
+        }
+      }
+    ]);
+
     console.log('info', info, info[0])
+    console.log('history', history)
 
     return res.json({
       info: info[0],
+      history: history,
     });
   } catch (e) {
     console.error(e);
@@ -323,6 +354,39 @@ export const getQuestions = async (req, res) => {
   }
 }
 
+export const getQuestionPreview = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+
+    const question = await Question.findOne(
+      {
+        _id: new ObjectId(questionId),
+      },
+      {
+        title: 1, description: 1, tips: 1,
+        imageKey: 1,
+      }
+    ).lean();
+    
+    console.log("questions", question)
+
+    const imageUrl = await getGetSignedUrl(question.imageKey);
+    
+    const tipsWithFlag = question.tips.map((v) => ({...v, visible: false}));
+    
+
+    return res.json({
+      data: {
+        ...question,
+        tips: tipsWithFlag,
+        imageUrl,
+      },
+    })
+  } catch (e) {
+    console.log(e);
+  }
+}
+
 export const createActivityAndAssignment = async (req, res) => {
   try {
     const { therapist, title, questions, patients } = req.body;
@@ -364,17 +428,223 @@ export const getActivities = async (req, res) => {
   try {
     const { therapistId } = req.params;
 
-    const activities = await Activity.find(
-      {
-        therapist: new ObjectId(therapistId),
-      },
-      {
-        title: 1, questions: 1,
+
+  const activities = await Activity.aggregate([
+    {
+      $match: {
+        therapist: new ObjectId(therapistId)
       }
-    ).lean();
+    },
+
+    // 1. Get questions with _id and title
+    {
+      $lookup: {
+        from: "questions",
+        localField: "questions",
+        foreignField: "_id",
+        pipeline: [
+          {
+            $project: {
+              _id: 1,
+              title: 1
+            }
+          }
+        ],
+        as: "questionsInfo"
+      }
+    },
+
+    // 2. Find assignments for each activity
+    {
+      $lookup: {
+        from: "assignments",
+        localField: "_id",
+        foreignField: "activity",
+        pipeline: [
+
+          // 3. Find the corresponding carelink
+          {
+            $lookup: {
+              from: "carelinks",
+              let: {
+                patientId: "$patient",
+                therapistId: "$therapist"
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        {
+                          $eq: ["$patient", "$$patientId"]
+                        },
+                        {
+                          $eq: ["$therapist", "$$therapistId"]
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  $project: {
+                    _id: 0,
+                    patientDisplayName: 1
+                  }
+                }
+              ],
+              as: "carelinkInfo"
+            }
+          },
+
+          // Extract patientDisplayName from carelinkInfo
+          {
+            $project: {
+              _id: "$patient",
+              patientDisplayName: {
+                $ifNull: [
+                  {
+                    $arrayElemAt: [
+                      "$carelinkInfo.patientDisplayName",
+                      0
+                    ]
+                  },
+                  null
+                ]
+              }
+            }
+          }
+        ],
+        as: "assignmentInfo"
+      }
+    },
+
+    // 4. Return the final structure
+    {
+      $project: {
+        _id: 1,
+        title: 1,
+        questions: "$questionsInfo",
+        patients: "$assignmentInfo"
+      }
+    }
+  ]);
+
+
+    // const activities = await Activity.aggregate([
+    //   {
+    //     $match: { 
+    //       therapist: new ObjectId(therapistId) 
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "questions",
+    //       let: { arrayField: "$questions" },
+    //       pipeline: [
+    //         {
+    //           $match: {
+    //             $expr: { $in: ["$_id", "$$arrayField"] }
+    //           }
+    //         },
+    //         {
+    //           $project: {
+    //             title: 1,
+    //           }
+    //         }
+    //       ],
+    //       as: "questionsInfo",
+    //     },
+    //   },
+
+    //   {
+    //     $lookup: {
+    //       from: "assignments",
+    //       let: { act_id: "$_id" },
+    //       pipeline: [
+    //         {
+    //           $match: {
+    //             $expr: { $eq: ["$activity", "$$act_id"] }
+    //           }
+    //         },
+            
+    //         { $lookup: {
+    //             from: "users",
+    //             localField: "patient",
+    //             foreignField: "_id",
+    //             as: "patientInfo"
+    //           }
+    //         },
+    //         {
+    //           $unwind: {
+    //             path: "$patientInfo",
+    //             preserveNullAndEmptyArrays: true,
+    //           }
+    //         },
+    //         { $lookup: {
+    //             from: "carelinks",
+    //             let: { thera_id: therapistId },
+    //             // localField: "$patientInfo._id",
+    //             // foreignField: "_id",
+    //             pipeline: [
+    //               {
+    //                 $match: {
+    //                   $expr: {
+    //                     $and: [
+    //                       { $eq: ["$patient", "$patientInfo._id"] },
+    //                       { $eq: ["$therapist", "$$thera_id"] },
+    //                     ],
+    //                   } ,
+    //                 },
+    //               },
+    //               {
+    //                 $project: {
+    //                   patientDisplayName: 1,
+    //                 }
+    //               }
+    //             ],
+    //             as: "patientInfo2"
+    //           }
+    //         },
+    //         {
+    //           $unwind: {
+    //             path: "$patientInfo2",
+    //             preserveNullAndEmptyArrays: true,
+    //           }
+    //         },
+
+    //         {
+    //           $project: {
+    //             patientTest: "$patientInfo2",
+    //             patientDisplayName: "$patientInfo2.patientDisplayName",
+    //           }
+    //         }
+            
+    //       ],
+    //       as: "assignmentInfo",
+    //     },
+    //   },
+
+    //   {
+    //     $unwind: {
+    //       path: "$assignmentInfo",
+    //       preserveNullAndEmptyArrays: true,
+    //     }
+    //   },
+
+    //   {
+    //     $project: {
+    //       title: 1, 
+    //       questions: "$questionsInfo",
+    //       patients: "$assignmentInfo",
+    //     },
+    //   }
+    // ]);
+
+    console.log(activities)
+    console.log(activities.patients)
 
     return res.json({
-      activities,
+      activities: activities.flat(),
     })
   } catch (e) {
     console.log(e);
